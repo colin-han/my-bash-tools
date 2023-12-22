@@ -108,21 +108,37 @@ function gf() {
       _gf_set -d
       ;;
     'commit')
-      _gf_commit "$args" "$(_gf_msg $last_arg)"
+      if [ ${#array[@]} -eq 0 ]; then
+        _gf_commit "$(_gf_msg $last_arg)"
+      else
+        _gf_commit "$args" "$(_gf_msg $last_arg)"
+      fi
       ;;
     'c')
       if _fg_req $last_arg; then
-        _gf_commit "$args" -m "$(_gf_msg $last_arg)"
+        if [ ${#array[@]} -eq 0 ]; then
+          _gf_commit -m "$(_gf_msg $last_arg)"
+        else
+          _gf_commit "$args" -m "$(_gf_msg $last_arg)"
+        fi
       fi
       ;;
     'ac')
       if _fg_req $last_arg; then
-        _gf_commit "$args" -a -m "$(_gf_msg $last_arg)"
+        if [ ${#array[@]} -eq 0 ]; then
+          _gf_commit -a -m "$(_gf_msg $last_arg)"
+        else
+          _gf_commit "$args" -a -m "$(_gf_msg $last_arg)"
+        fi
       fi
       ;;
     'ca')
       if _fg_req $last_arg; then
-        _gf_commit "$args" --amend --no-edit "$(_gf_msg $last_arg)"
+        if [ ${#array[@]} -eq 0 ]; then
+          _gf_commit "--amend" "--no-edit" "-m" "$(_gf_msg $last_arg)"
+        else
+          _gf_commit "$args" "--amend" "--no-edit" "-m" "$(_gf_msg $last_arg)"
+        fi
       fi
       ;;
     esac
