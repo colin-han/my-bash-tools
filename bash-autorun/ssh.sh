@@ -14,7 +14,7 @@ make_ssh_alias() {
 
     # echo NAME=${NAME} PORT=${PORT} USER=${USER} KEY_FILE=${KEY_FILE}
 
-    alias ${NAME}="ssh -i \"${KEY_FILE}\" -p ${PORT} ${USER}@${HOST}"
+    alias s2${NAME}="ssh -i \"${KEY_FILE}\" -p ${PORT} ${USER}@${HOST}"
     alias c2${NAME}="c2${NAME}() { scp -i \"${KEY_FILE}\" -P ${PORT} \"\$1\" \"${USER}@${HOST}:\$2\"; }; c2${NAME}"
     alias c4${NAME}="c4${NAME}() { scp -i \"${KEY_FILE}\" -P ${PORT} \"${USER}@${HOST}:\$1\" \"\$2\"; }; c4${NAME}"
 }

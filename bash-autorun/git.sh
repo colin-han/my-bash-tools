@@ -5,6 +5,27 @@ alias ggp='git g && git p'
 alias gg='git g'
 alias gp='git p'
 
+function gbm() {
+  local target=$1
+
+  if [[ "$target" == "" ]]; then
+    echo "Please specify the target branch."
+    return 1
+  fi
+
+  # 如果当前目录存在未提交代码，终止进程
+  if [[ $(git status -s) != "" ]]; then
+    echo "There are uncommitted changes in the current directory."
+    return 1
+  fi
+
+  local current=$(git branch --show-current)
+  git checkout -f "$target" \
+    && git pull --rebase \
+    && git checkout "$current" \
+    && git merge "$target"
+}
+
 alias gac="_gac() {
   if [[ \"\$1\" == \"\" ]]; then
     echo \"Commit message is required!\"
