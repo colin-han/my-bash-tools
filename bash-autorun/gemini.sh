@@ -1,0 +1,2 @@
+alias gemini='gfw gemini'
+

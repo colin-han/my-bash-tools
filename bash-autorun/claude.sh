@@ -1,0 +1,134 @@
+func claude() {
+  local env_name=""
+  local remaining_args=()
+  local skip_next=0
+  local env_dir="/Users/kejinghan/online/bash-autorun/private/claude"
+  local managed_vars=(
+    ANTHROPIC_BASE_URL
+    ANTHROPIC_AUTH_TOKEN
+    API_TIMEOUT_MS
+    CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC
+    ANTHROPIC_DEFAULT_HAIKU_MODEL
+    ANTHROPIC_DEFAULT_SONNET_MODEL
+    ANTHROPIC_DEFAULT_OPUS_MODEL
+  )
+
+  # 解析参数，提取 --env 参数
+  for arg in "$@"; do
+    if [[ $skip_next -eq 1 ]]; then
+      env_name="$arg"
+      skip_next=0
+    elif [[ "$arg" == "--env" ]]; then
+      skip_next=1
+    elif [[ "$arg" == --env=* ]]; then
+      env_name="${arg#--env=}"
+    else
+      remaining_args+=("$arg")
+    fi
+  done
+
+  # 如果未指定环境，让用户选择
+  if [[ -z "$env_name" ]]; then
+    local env_names=()
+    local env_descs=()
+
+    for f in "$env_dir"/*.env; do
+      [[ -f "$f" ]] || continue
+      local name="$(basename "$f" .env)"
+      local desc="$(grep -m1 '^# description:' "$f" 2>/dev/null | sed 's/^# description: *//')"
+      env_names+=("$name")
+      env_descs+=("$desc")
+    done
+
+    if [[ ${#env_names[@]} -eq 0 ]]; then
+      echo "错误: $env_dir 目录中没有找到任何 .env 文件"
+      return 1
+    fi
+
+    echo "请选择 Claude 运行环境："
+    local num=${#env_names[@]}
+    for ((i=1; i<=num; i++)); do
+      if [[ -n "${env_descs[$i]}" ]]; then
+        printf "  %d) %-10s - %s\n" "$i" "${env_names[$i]}" "${env_descs[$i]}"
+      else
+        printf "  %d) %s\n" "$i" "${env_names[$i]}"
+      fi
+    done
+    echo -n "请输入选择 (1-$num): "
+    read choice
+
+    if [[ "$choice" =~ ^[0-9]+$ ]] && [[ $choice -ge 1 ]] && [[ $choice -le $num ]]; then
+      env_name="${env_names[$choice]}"
+    else
+      echo "无效选择，已取消。"
+      return 1
+    fi
+  fi
+
+  # 检查环境文件是否存在
+  local env_file="$env_dir/${env_name}.env"
+  if [[ ! -f "$env_file" ]]; then
+    echo "未找到环境配置文件: $env_file"
+    echo "可用环境："
+    for f in "$env_dir"/*.env; do
+      [[ -f "$f" ]] && echo "  - $(basename "$f" .env)"
+    done
+    return 1
+  fi
+
+  # 清除所有管理的环境变量
+  for var in "${managed_vars[@]}"; do
+    unset "$var"
+  done
+
+  # 从文件中加载环境变量
+  while IFS= read -r line; do
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+    [[ -z "${line// }" ]] && continue
+    if [[ "$line" == *=* ]]; then
+      local key="${line%%=*}"
+      local val="${line#*=}"
+      export "$key"="$val"
+    fi
+  done < "$env_file"
+
+  # 漂亮的格式输出配置信息
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "🔧 Claude API 配置信息 [环境: $env_name]"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+  if [[ -n "$ANTHROPIC_BASE_URL" ]]; then
+    echo "📡 Base URL:  $ANTHROPIC_BASE_URL"
+  else
+    echo "📡 Base URL:  (默认)"
+  fi
+
+  if [[ -n "$ANTHROPIC_AUTH_TOKEN" ]]; then
+    # Token 掩码处理：显示前6位和后4位
+    local token_length=${#ANTHROPIC_AUTH_TOKEN}
+    local masked_token=""
+    if [ $token_length -gt 10 ]; then
+      local prefix="${ANTHROPIC_AUTH_TOKEN:0:6}"
+      local suffix="${ANTHROPIC_AUTH_TOKEN: -4}"
+      local mask_length=$((token_length - 10))
+      local mask=$(printf '*%.0s' $(seq 1 $mask_length))
+      masked_token="${prefix}${mask}${suffix}"
+    else
+      masked_token="$ANTHROPIC_AUTH_TOKEN"
+    fi
+    echo "🔑 Auth Token: $masked_token"
+  else
+    echo "🔑 Auth Token: (默认)"
+  fi
+
+  if [[ -n "$ANTHROPIC_DEFAULT_HAIKU_MODEL" ]]; then
+    echo "🤖 Haiku  -> $ANTHROPIC_DEFAULT_HAIKU_MODEL"
+    echo "🤖 Sonnet -> $ANTHROPIC_DEFAULT_SONNET_MODEL"
+    echo "🤖 Opus   -> $ANTHROPIC_DEFAULT_OPUS_MODEL"
+  fi
+
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+
+  /Users/kejinghan/.local/bin/claude "${remaining_args[@]}"
+}
