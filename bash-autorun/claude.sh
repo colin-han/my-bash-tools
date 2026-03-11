@@ -2,7 +2,7 @@ func claude() {
   local env_name=""
   local remaining_args=()
   local skip_next=0
-  local env_dir="/Users/kejinghan/online/bash-autorun/private/claude"
+  local env_dir="$HOME/tools/bash-autorun/private/claude"
   local managed_vars=(
     ANTHROPIC_BASE_URL
     ANTHROPIC_AUTH_TOKEN
@@ -130,5 +130,5 @@ func claude() {
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo ""
 
-  /Users/kejinghan/.local/bin/claude "${remaining_args[@]}"
+  $HOME/.local/bin/claude "${remaining_args[@]}"
 }
