@@ -8,6 +8,7 @@ func claude() {
     ANTHROPIC_AUTH_TOKEN
     API_TIMEOUT_MS
     CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC
+    CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS
     ANTHROPIC_DEFAULT_HAIKU_MODEL
     ANTHROPIC_DEFAULT_SONNET_MODEL
     ANTHROPIC_DEFAULT_OPUS_MODEL
@@ -119,6 +120,10 @@ func claude() {
     echo "🔑 Auth Token: $masked_token"
   else
     echo "🔑 Auth Token: (默认)"
+  fi
+
+  if [[ -n "$CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS" ]]; then
+    echo "👥 Agent Teams: 已启用"
   fi
 
   if [[ -n "$ANTHROPIC_DEFAULT_HAIKU_MODEL" ]]; then
