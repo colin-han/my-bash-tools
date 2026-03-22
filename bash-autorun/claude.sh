@@ -28,42 +28,35 @@ func claude() {
     fi
   done
 
-  # 如果未指定环境，让用户选择
+  # 如果未指定环境，用 fzf 让用户选择
   if [[ -z "$env_name" ]]; then
-    local env_names=()
-    local env_descs=()
+    local env_entries=()
 
     for f in "$env_dir"/*.env; do
       [[ -f "$f" ]] || continue
       local name="$(basename "$f" .env)"
       local desc="$(grep -m1 '^# description:' "$f" 2>/dev/null | sed 's/^# description: *//')"
-      env_names+=("$name")
-      env_descs+=("$desc")
+      if [[ -n "$desc" ]]; then
+        env_entries+=("${name} - ${desc}")
+      else
+        env_entries+=("$name")
+      fi
     done
 
-    if [[ ${#env_names[@]} -eq 0 ]]; then
+    if [[ ${#env_entries[@]} -eq 0 ]]; then
       echo "错误: $env_dir 目录中没有找到任何 .env 文件"
       return 1
     fi
 
-    echo "请选择 Claude 运行环境："
-    local num=${#env_names[@]}
-    for ((i=1; i<=num; i++)); do
-      if [[ -n "${env_descs[$i]}" ]]; then
-        printf "  %d) %-10s - %s\n" "$i" "${env_names[$i]}" "${env_descs[$i]}"
-      else
-        printf "  %d) %s\n" "$i" "${env_names[$i]}"
-      fi
-    done
-    echo -n "请输入选择 (1-$num): "
-    read choice
+    local selected
+    selected=$(printf '%s\n' "${env_entries[@]}" | fzf --prompt="选择 Claude 环境: " --height=~10 --layout=reverse --border)
 
-    if [[ "$choice" =~ ^[0-9]+$ ]] && [[ $choice -ge 1 ]] && [[ $choice -le $num ]]; then
-      env_name="${env_names[$choice]}"
-    else
-      echo "无效选择，已取消。"
+    if [[ -z "$selected" ]]; then
+      echo "已取消。"
       return 1
     fi
+
+    env_name="${selected%% - *}"
   fi
 
   # 检查环境文件是否存在
