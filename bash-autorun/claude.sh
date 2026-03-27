@@ -8,13 +8,12 @@ func claude() {
     ANTHROPIC_AUTH_TOKEN
     API_TIMEOUT_MS
     CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC
-    CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS
-    ANTHROPIC_DEFAULT_HAIKU_MODEL
+ANTHROPIC_DEFAULT_HAIKU_MODEL
     ANTHROPIC_DEFAULT_SONNET_MODEL
     ANTHROPIC_DEFAULT_OPUS_MODEL
   )
 
-  # 解析参数，提取 --env 参数
+  # 解析参数，提取 --env 和 --teams 参数
   for arg in "$@"; do
     if [[ $skip_next -eq 1 ]]; then
       env_name="$arg"
@@ -23,6 +22,8 @@ func claude() {
       skip_next=1
     elif [[ "$arg" == --env=* ]]; then
       env_name="${arg#--env=}"
+    elif [[ "$arg" == "--teams" ]]; then
+      enable_teams=1
     else
       remaining_args+=("$arg")
     fi
@@ -57,6 +58,16 @@ func claude() {
     fi
 
     env_name="${selected%% - *}"
+
+    # 未指定 --teams 时，提示是否启用 teams
+    if [[ $enable_teams -ne 1 ]]; then
+      echo "是否启用 Agent Teams? [y/N]"
+      local answer
+      read -r answer
+      if [[ "$answer" =~ ^[Yy]$ ]]; then
+        enable_teams=1
+      fi
+    fi
   fi
 
   # 检查环境文件是否存在
@@ -85,6 +96,14 @@ func claude() {
       export "$key"="$val"
     fi
   done < "$env_file"
+
+  # 将环境变量文件名赋值给 CLAUDE_PROFILE
+  if [[ $enable_teams -eq 1 ]]; then
+    export CLAUDE_PROFILE="$env_name (with agent teams)"
+    export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
+  else
+    export CLAUDE_PROFILE="$env_name"
+  fi
 
   # 漂亮的格式输出配置信息
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
